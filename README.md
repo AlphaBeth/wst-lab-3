@@ -33,3 +33,43 @@ The project consists of some modules:
 - exterminatus-service -- implementation of JAX-WS service
 - standalone-jaxws -- standalone version of exterminatus service
 - jaxws-client -- console client for web service
+
+# Docker build
+
+Docker build is available.
+
+`docker-compose up`
+
+## Services
+
+- postgres - common database
+- standalone-exterminatus - standalone version of application, see standalone-jaxws
+
+See `Dockerfile`.
+
+### postgres
+
+PostgreSQL container to store data.
+
+Init script - `docker-files/init.sql`.
+
+Dockerfile - `Dockerfile-data`.
+
+### standalone-exterminatus
+
+Standalone version of exterminatus service inside docker container (see standalone-jaxws).
+
+Default ports:
+- 8080 - http, mapped to host at 9999
+
+Useful urls:
+
+- `http://localhost:9999/EXTERMINATE` - service endpoint
+- `http://localhost:9999/EXTERMINATE?wsdl` - service WSDL
+
+Configuration:
+
+- `docker-files/config.properties` - config of service
+- `docker-files/datasource.properties` - connection to database
+
+Dockerfile - `Dockerfile-standalone`.

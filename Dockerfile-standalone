@@ -1,0 +1,23 @@
+FROM openjdk:8
+RUN apt-get update && apt-get install -y netcat && \
+    apt-get install -y maven
+RUN mkdir /build
+COPY pom.xml /build/
+COPY data-access/pom.xml /build/data-access/
+COPY exterminatus-service/pom.xml /build/exterminatus-service/
+COPY jaxws-client/pom.xml /build/jaxws-client/
+COPY standalone-jaxws/pom.xml /build/standalone-jaxws/
+WORKDIR /build
+RUN mvn -fn dependency:go-offline
+#force downloading of plugins
+RUN mvn -fn install
+COPY ./data-access/ /build/data-access/
+COPY ./exterminatus-service/ /build/exterminatus-service/
+COPY ./jaxws-client/ /build/jaxws-client/
+COPY ./standalone-jaxws/ /build/standalone-jaxws/
+
+COPY ./docker-files/config.properties /build/standalone-jaxws/src/main/resources/
+COPY ./docker-files/datasource.properties /build/standalone-jaxws/src/main/resources/
+
+RUN mvn clean install
+COPY docker-files/wait-for /

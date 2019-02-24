@@ -1,0 +1,23 @@
+version: '3.5'
+services:
+  standalone-exterminatus:
+    depends_on:
+      - postgres
+    ports:
+      - "9999:8080"
+    expose:
+      - "8080"
+    build:
+      dockerfile: Dockerfile-standalone
+      context: .
+    command: "/wait-for postgres:5432 -- java -jar /build/standalone-jaxws/target/standalone-jaxws-3.0-jar-with-dependencies.jar"
+    links:
+      - "postgres:postgres"
+  postgres:
+    build:
+      dockerfile: Dockerfile-data
+      context: .
+    volumes:
+      - exterminatus-data:/var/lib/postgresql/data
+volumes:
+  exterminatus-data: {}
