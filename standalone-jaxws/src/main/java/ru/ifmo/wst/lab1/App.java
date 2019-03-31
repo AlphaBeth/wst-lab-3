@@ -42,7 +42,8 @@ public class App {
         log.info("Publish test dao service onto {}", daoServiceUrl);
         Endpoint.publish(daoServiceUrl, new TestDAOService(sampleDAO));
         log.info("Publish exterminatus service onto {}", exterminatusUrl);
-        Endpoint.publish(exterminatusUrl, new ExterminatusService(new ExterminatusDAO(dataSource)));
+        Endpoint.publish(exterminatusUrl, new ExterminatusService(new ExterminatusDAO(dataSource),
+                (userName, password) -> userName.equals("user") && password.equals("password")));
         log.info("Application was successfully started");
     }
 

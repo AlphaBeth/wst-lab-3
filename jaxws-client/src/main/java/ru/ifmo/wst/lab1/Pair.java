@@ -1,10 +1,10 @@
 package ru.ifmo.wst.lab1;
 
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 public class Pair<L, R> {
-    private final L left;
-    private final R right;
+    private L left;
+    private R right;
 
 }

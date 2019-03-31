@@ -15,7 +15,7 @@ public class ConsoleClient {
         ExterminatusService service = exterminatusService.getExterminatusServicePort();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
         String endpointUrl;
-        endpointUrl = "http://localhost:8080/deployment-jaxws-1.0/ExterminatusServiceService";
+        endpointUrl = "http://localhost:8080/EXTERMINATE";
         System.out.print("Enter endpoint url (or empty string for default " + endpointUrl + ")\n> ");
         String line = bufferedReader.readLine();
         if (line == null) {

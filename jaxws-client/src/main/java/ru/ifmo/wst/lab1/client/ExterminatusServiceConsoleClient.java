@@ -3,6 +3,7 @@ package ru.ifmo.wst.lab1.client;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import ru.ifmo.wst.lab1.Box;
+import ru.ifmo.wst.lab1.Pair;
 import ru.ifmo.wst.lab1.command.Command;
 import ru.ifmo.wst.lab1.command.CommandArg;
 import ru.ifmo.wst.lab1.command.CommandArgDescription;
@@ -12,6 +13,8 @@ import ru.ifmo.wst.lab1.command.args.DateArg;
 import ru.ifmo.wst.lab1.command.args.EmptyStringToNull;
 import ru.ifmo.wst.lab1.command.args.LongArg;
 import ru.ifmo.wst.lab1.command.args.StringArg;
+import ru.ifmo.wst.lab1.ws.ForbiddenException;
+import ru.ifmo.wst.lab1.ws.UnuathorizedException;
 import ru.ifmo.wst.lab1.ws.client.Create;
 import ru.ifmo.wst.lab1.ws.client.ExterminatusEntity;
 import ru.ifmo.wst.lab1.ws.client.ExterminatusService;
@@ -22,14 +25,21 @@ import ru.ifmo.wst.lab1.ws.client.Update;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.ws.BindingProvider;
+import javax.xml.ws.handler.MessageContext;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 
 public class ExterminatusServiceConsoleClient {
     private static final String ID_ARG_NAME = "id";
@@ -57,6 +67,8 @@ public class ExterminatusServiceConsoleClient {
     @Getter
     private boolean exit = false;
     private ExterminatusService service;
+    private String username = "";
+    private String password = "";
 
     public ExterminatusServiceConsoleClient(ExterminatusService service) {
         this.service = service;
@@ -103,24 +115,45 @@ public class ExterminatusServiceConsoleClient {
                 asList(
                         new CommandArg<>(ID_COMMAND_ARG, Box::setValue)
                 ), Box::new, this::delete);
+        Command<Pair<String, String>> authCommand = new Command<>("auth", "Change auth info",
+                asList(
+                        new CommandArg<>(new StringArg("username", "Username"), Pair::setLeft),
+                        new CommandArg<>(new StringArg("password", "Password"), Pair::setRight)
+                ), Pair::new, this::updateAuth);
         Command<Void> exitCommand = new Command<>("exit", "Exit application", (arg) -> this.exit = true);
         this.commandInterpreter = new CommandInterpreter(() -> readLine(bufferedReader),
-                System.out::print, asList(infoCommand, changeEndpointAddressCommand, findAllCommand, filterCommand,
+                System.out::print, asList(infoCommand, changeEndpointAddressCommand, authCommand, findAllCommand, filterCommand,
                 createCommand, updateCommand, deleteCommand, exitCommand),
                 "No command found",
                 "Enter command", "> ");
 
     }
 
+    private void updateAuth(Pair<String, String> authInfo) {
+        this.username = authInfo.getLeft();
+        this.password = authInfo.getRight();
+    }
+
     @SneakyThrows
     public void create(Create createArg) {
+        preAuth();
         long createdId = service.create(createArg.getInitiator(), createArg.getReason(), createArg.getMethod(), createArg.getPlanet(),
                 createArg.getDate());
         System.out.printf("Entity with id %d was created\n", createdId);
     }
 
+    private void preAuth() {
+        BindingProvider bp = (BindingProvider) service;
+        Map<String, Object> rc = bp.getRequestContext();
+        Map<String, List<String>> headers = new HashMap<>();
+        headers.put("Authorization", singletonList("Basic " + Base64.getEncoder()
+                .encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8))));
+        rc.put(MessageContext.HTTP_REQUEST_HEADERS, headers);
+    }
+
     @SneakyThrows
     public void update(Update updateArg) {
+        preAuth();
         int updateCount = service.update(updateArg.getId(), updateArg.getInitiator(), updateArg.getReason(), updateArg.getMethod(),
                 updateArg.getPlanet(), updateArg.getDate());
         System.out.printf("%d rows were updated by id %d\n", updateCount, updateArg.getId());
@@ -128,6 +161,7 @@ public class ExterminatusServiceConsoleClient {
 
     @SneakyThrows
     public void delete(long id) {
+        preAuth();
         int deleteCount = service.delete(id);
         System.out.printf("%d rows were deleted by id %d\n", deleteCount, id);
     }
@@ -146,6 +180,12 @@ public class ExterminatusServiceConsoleClient {
                 exit = true;
             } catch (ExterminatusServiceException exc) {
                 System.out.println("Error in service:");
+                System.out.println(exc.getFaultInfo().getMessage());
+            } catch (ForbiddenException exc) {
+                System.out.println("Forbidden");
+                System.out.println(exc.getFaultInfo().getMessage());
+            } catch (UnuathorizedException exc) {
+                System.out.println("Authorization required");
                 System.out.println(exc.getFaultInfo().getMessage());
             } catch (Exception exc) {
                 System.out.println("Unknown error");
