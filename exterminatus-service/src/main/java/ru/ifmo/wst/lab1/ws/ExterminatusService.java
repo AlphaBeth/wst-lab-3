@@ -46,11 +46,10 @@ public class ExterminatusService {
     }
 
     @WebMethod
-    public List<ExterminatusEntity> filter(@WebParam(name = "id") Long id, @WebParam(name = "initiator") String initiator,
-                                           @WebParam(name = "reason") String reason, @WebParam(name = "method") String method,
-                                           @WebParam(name = "planet") String planet, @WebParam(name = "date") Date date)
+    public List<ExterminatusEntity> filter(FilterParam filterParam)
             throws ExterminatusServiceException {
-        return wrapException(() -> exterminatusDAO.filter(id, initiator, reason, method, planet, date));
+        return wrapException(() -> exterminatusDAO.filter(filterParam.getId(), filterParam.getInitiator(),
+                filterParam.getReason(), filterParam.getMethod(), filterParam.getPlanet(), filterParam.getDate()));
     }
 
     @WebMethod

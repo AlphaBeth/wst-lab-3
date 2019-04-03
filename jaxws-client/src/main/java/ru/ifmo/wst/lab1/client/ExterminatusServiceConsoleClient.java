@@ -13,13 +13,13 @@ import ru.ifmo.wst.lab1.command.args.DateArg;
 import ru.ifmo.wst.lab1.command.args.EmptyStringToNull;
 import ru.ifmo.wst.lab1.command.args.LongArg;
 import ru.ifmo.wst.lab1.command.args.StringArg;
-import ru.ifmo.wst.lab1.ws.ForbiddenException;
-import ru.ifmo.wst.lab1.ws.UnuathorizedException;
+import ru.ifmo.wst.lab1.ws.client.ForbiddenException;
+import ru.ifmo.wst.lab1.ws.client.UnuathorizedException;
 import ru.ifmo.wst.lab1.ws.client.Create;
 import ru.ifmo.wst.lab1.ws.client.ExterminatusEntity;
 import ru.ifmo.wst.lab1.ws.client.ExterminatusService;
 import ru.ifmo.wst.lab1.ws.client.ExterminatusServiceException;
-import ru.ifmo.wst.lab1.ws.client.Filter;
+import ru.ifmo.wst.lab1.ws.client.FilterParam;
 import ru.ifmo.wst.lab1.ws.client.Update;
 
 import javax.xml.datatype.DatatypeFactory;
@@ -31,7 +31,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -80,17 +79,17 @@ public class ExterminatusServiceConsoleClient {
                 ), Box::new, this::changeEndpointUrl
         );
         Command<Void> findAllCommand = new Command<>("findAll", "Return list of all exterminatus entities", (arg) -> this.findAll());
-        Command<Filter> filterCommand = new Command<>("filter",
+        Command<FilterParam> filterCommand = new Command<>("filter",
                 "Filter exterminatus entities by column values (ignore case contains for strings), empty values are ignored",
                 asList(
-                        new CommandArg<>(toNull(ID_COMMAND_ARG), Filter::setId),
-                        new CommandArg<>(toNull(INITATOR_COMMAND_ARG), Filter::setInitiator),
-                        new CommandArg<>(toNull(REASON_COMMAND_ARG), Filter::setReason),
-                        new CommandArg<>(toNull(METHOD_COMMAND_ARG), Filter::setMethod),
-                        new CommandArg<>(toNull(PLANET_COMMAND_ARG), Filter::setPlanet),
+                        new CommandArg<>(toNull(ID_COMMAND_ARG), FilterParam::setId),
+                        new CommandArg<>(toNull(INITATOR_COMMAND_ARG), FilterParam::setInitiator),
+                        new CommandArg<>(toNull(REASON_COMMAND_ARG), FilterParam::setReason),
+                        new CommandArg<>(toNull(METHOD_COMMAND_ARG), FilterParam::setMethod),
+                        new CommandArg<>(toNull(PLANET_COMMAND_ARG), FilterParam::setPlanet),
                         new CommandArg<>(toNull(DATE_COMMAND_ARG), (filter, date) -> filter.setDate(fromDate(date)))
                 ),
-                Filter::new, this::filter);
+                FilterParam::new, this::filter);
         Command<Create> createCommand = new Command<>("create",
                 "Create new exterminatus entity",
                 asList(
@@ -211,9 +210,8 @@ public class ExterminatusServiceConsoleClient {
     }
 
     @SneakyThrows
-    public void filter(Filter filterArg) {
-        List<ExterminatusEntity> filterRes = service.filter(filterArg.getId(), filterArg.getInitiator(), filterArg.getReason(), filterArg.getMethod(),
-                filterArg.getPlanet(), filterArg.getDate());
+    public void filter(FilterParam filterArg) {
+        List<ExterminatusEntity> filterRes = service.filter(filterArg);
         System.out.println("Result of operation:");
         filterRes.forEach(ee -> System.out.println(exterminatusToString(ee)));
     }
